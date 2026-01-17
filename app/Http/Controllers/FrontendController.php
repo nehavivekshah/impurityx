@@ -1425,6 +1425,8 @@ class FrontendController extends Controller
                 ->leftJoin('usermetas as sellerMetas', 'biddings.seller_id', '=', 'sellerMetas.uid')
                 ->select(
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'orders.quantity as qty_reqd',
                     'orders.invoice_no',
