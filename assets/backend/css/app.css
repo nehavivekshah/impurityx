@@ -1,0 +1,201 @@
+/* public/assets/backend/css/app.css */
+
+/* --- Variable Definitions --- */
+:root {
+    /* Colors */
+    --color-primary: #6a11cb;
+    --color-secondary: #2575fc;
+    --color-success: #28a745;
+    --color-danger: #dc3545;
+    --color-text-dark: #343a40;
+    --color-text-light: #f8f9fa;
+    --color-text-muted: #6c757d;
+    --color-white: #ffffff;
+    --color-border: rgba(255, 255, 255, 0.25);
+    --color-glass-bg: rgba(255, 255, 255, 0.1);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+    --gradient-background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+
+    /* Spacing & Radius */
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 1rem;
+
+    /* Shadows */
+    --shadow-card: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    --shadow-input-focus: 0 0 0 0.2rem rgba(37, 117, 252, 0.25);
+}
+
+/* --- Base & Wrapper --- */
+body {
+    font-family: 'Poppins', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    color: var(--color-text-dark);
+}
+
+.login-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--space-lg);
+    background: linear-gradient(45deg, #f0f9ff, #ecfdf5);
+}
+
+/* --- Card (Light Theme) --- */
+.login-card {
+    background: var(--color-white);
+    color: var(--color-text-dark);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-sm);
+}
+
+.animated-card {
+    animation: fadeInDown 0.8s ease-out forwards;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.card-subtitle {
+    color: var(--color-text-muted) !important;
+}
+
+/* --- Form Elements --- */
+.form-group {
+    margin-bottom: var(--space-lg);
+}
+
+.input-group {
+    border: 1px solid #ced4da;
+    border-radius: var(--radius-md);
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.input-group:focus-within {
+    border-color: var(--color-secondary);
+    box-shadow: var(--shadow-input-focus);
+    background-color: #ffffff;
+}
+
+.input-icon {
+    padding: 0 0.75rem;
+    display: flex;
+    align-items: center;
+    filter: invert(0.3);
+    width: 40px;
+}
+
+.form-control {
+    background: transparent;
+    border: none;
+    color: var(--color-text-dark);
+    height: 40px;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+    opacity: 1;
+}
+
+.form-control:focus {
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-text-dark);
+}
+
+/* --- Buttons & Links --- */
+.btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 8px;
+    font-weight: 600;
+    height: 40px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    color: var(--color-white);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.small-link, .form-check-label {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+a {
+    color: var(--color-secondary);
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+/* --- Validation & Alerts --- */
+.alert {
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    padding: 0.75rem 1.25rem;
+}
+
+.input-group.is-invalid {
+    border-color: var(--color-danger);
+}
+
+.invalid-feedback {
+    display: block;
+    color: var(--color-danger);
+    background-color: rgba(255, 0, 0, 0.05);
+    padding: 5px 10px;
+    border-radius: var(--radius-md);
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+/* --- Optional Theme Switcher (Light/Dark) --- */
+.theme-light .login-card {
+    background: var(--color-white);
+    color: var(--color-text-dark);
+    border: 1px solid #dee2e6;
+    box-shadow: var(--shadow-card);
+}
+
+.theme-dark .login-card {
+    background: var(--color-glass-bg);
+    color: var(--color-text-light);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+}
