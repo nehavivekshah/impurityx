@@ -81,27 +81,24 @@
                         
                         @foreach($orders as $key => $order)
                         
-                        @php
-                        
-                            $month = date('m', strtotime($order->created_at));
-                            $year = date('Y', strtotime($order->created_at));
-                            
-                            if ($month >= 3) {
-                                // March to Dec
-                                $fy_start = date('y', strtotime($order->created_at));
-                                $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
-                            } else {
-                                // Jan-Feb
-                                $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
-                                $fy_end = date('y', strtotime($order->created_at));
-                            }
-                            
-                            $financialYear = $fy_start . '' . $fy_end;
-                        
-                        @endphp
+                        @if(!empty($order->financial_year) && !empty($order->fy_sequence))
+                            @php $displayId = $order->financial_year . '-' . str_pad($order->fy_sequence, 3, '0', STR_PAD_LEFT); @endphp
+                        @else
+                            @php
+                                $month = date('m', strtotime($order->created_at));
+                                if ($month >= 4) {
+                                    $fy_start = date('y', strtotime($order->created_at));
+                                    $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
+                                } else {
+                                    $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
+                                    $fy_end = date('y', strtotime($order->created_at));
+                                }
+                                $displayId = $fy_start . '' . $fy_end . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
+                            @endphp
+                        @endif
                         <tr>
                             <td>{{ $key + 1 }}</td>
-                            <td><strong>{{ $financialYear . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT) }}</strong></td>
+                            <td><strong>{{ $displayId }}</strong></td>
                             <td>
                                 {!! $order->first_name . ' ' . $order->last_name !!}
                                 <br><small>{{ $order->email }}</small>
