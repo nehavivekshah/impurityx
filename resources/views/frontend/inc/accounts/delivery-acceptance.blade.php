@@ -3,6 +3,7 @@
         .form-control {
             padding: .375rem 3px !important;
         }
+
         .w-45 input {
             width: 100%;
         }
@@ -69,95 +70,102 @@
                 </thead>
                 <tbody>
                     @php
-                    $now = \Carbon\Carbon::now();
+                        $now = \Carbon\Carbon::now();
                     @endphp
                     @foreach($myorders as $key => $order)
-                    @php
-                    
-                    $month = date('m', strtotime($order->created_at));
-                    $year = date('Y', strtotime($order->created_at));
-                    
-                    if ($month >= 3) {
-                        // March to Dec
-                        $fy_start = date('y', strtotime($order->created_at));
-                        $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
-                    } else {
-                        // Jan-Feb
-                        $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
-                        $fy_end = date('y', strtotime($order->created_at));
-                    }
-                    
-                    $financialYear = $fy_start . '' . $fy_end;
-                    
-                    @endphp
-                    <tr>
-                        <td class="text-center" width="50px">{{ $key + 1 }}</td>
-                        <td><strong>{{ $financialYear . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT) }}</strong></td>
-                        <td>
-                            {!! $order->sku ?? 'N/A' !!}<br>
-                            {{ $order->name ?? 'N/A' }}
-                        </td>
-                        <td>
-                            Qty: {{ $order->quantity }} {{ $order->uom }}<br>
-                            Delivery: {{ \Carbon\Carbon::parse($order->awarded_date)->addDays($order->days)->format('d M, Y') }}
-                        </td>
-                        <td>
-                            {!! $order->first_name ?? '' !!} {!! $order->last_name ?? '' !!}<br>
-                            Price: {{ $order->price ?? '' }} /-
-                        </td>
-                        <td>
-                            Rs. {!! ($order->price ?? 0) * ($order->quantity ?? 0) !!} /-
-                        </td>
-                        <td class="text-center">
-                            @if($order->status == 'pending')
-                            <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Initiate</a>
-                            @elseif($order->status == 'active')
-                            @if($order->auction_end > $now)
-                            <a href="javascript:void(0)" class="badge bg-success td-none">Acitve</a>
-                            @else
-                            <a href="javascript:void(0)" class="badge bg-danger td-none">Select Bid</a>
-                            @endif
-                            @elseif($order->status == 'awarded')
-                            <a href="javascript:void(0)" class="badge bg-primary td-none">Order Awarded</a>
-                            @elseif($order->status == 'selected')
-                            <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Admin to confirm</a>
-                            @elseif($order->status == 'cancelled')
-                            <a href="javascript:void(0)" class="badge bg-secondary td-none">Cancelled</a>
-                            @else
-                            <a href="javascript:void(0)" class="badge bg-danger td-none">closed</a>
-                            @endif
-                        </td>
-                        <td class="text-center">
-                            @if($order->seller_status == 'order-initiated')
-                            <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Order Initiated</a>
-                            @elseif($order->seller_status == 'order-task-completed')
-                            <a href="javascript:void(0)" class="badge bg-primary td-none">Order Task Completed</a>
-                            @elseif($order->seller_status == 'delivery-initiated')
-                            <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Delivery Initiated</a>
-                            @elseif($order->seller_status == 'delivery-completed')
-                            <a href="javascript:void(0)" class="badge bg-success td-none">Delivery Completed</a>
-                            @elseif($order->seller_status == 'accepted')
-                            <a href="javascript:void(0)" class="badge bg-success td-none">Delivery Accepted</a>
-                            @else
-                            <a href="javascript:void(0)" class="badge bg-secondary td-none">--</a>
-                            @endif
-                        </td>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($order->created_at)->format('d M, Y') }}</td>
-                        <td class="text-center" width="90px">
-                            <a href="javascript:void(0)" id="{{ $order->id }}" class="btn btn-sm btn-info view" title="View Details" data-page="awardedorders">
-                                <i class="bx bx-show"></i>
-                            </a>
-                            @if($order->seller_status == 'delivery-completed')
-                            <a href="/my-account/delivery-acceptance?id={{ $order->id }}&status=accepted"
-                                class="btn btn-sm btn-success"
-                                title="Accepted"
-                                data-page="accepted"
-                                onclick="return confirm('Please check for order completeness in terms of quality and quantity before Delivery Acceptance.')">
-                                <i class="fas fa-check-circle"></i>
-                            </a>
-                            @endif
-                        </td>
-                    </tr>
+                        @php
+
+                            $month = date('m', strtotime($order->created_at));
+                            $year = date('Y', strtotime($order->created_at));
+
+                            if ($month >= 3) {
+                                // March to Dec
+                                $fy_start = date('y', strtotime($order->created_at));
+                                $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
+                            } else {
+                                // Jan-Feb
+                                $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
+                                $fy_end = date('y', strtotime($order->created_at));
+                            }
+
+                            $financialYear = $fy_start . '' . $fy_end;
+
+                        @endphp
+                        <tr>
+                            <td class="text-center" width="50px">{{ $key + 1 }}</td>
+                            <td><strong>
+                                    @if(!empty($order->financial_year) && !empty($order->fy_sequence))
+                                        {{ $order->financial_year . '-' . str_pad($order->fy_sequence, 3, '0', STR_PAD_LEFT) }}
+                                    @else
+                                        {{ $financialYear . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT) }}
+                                    @endif
+                                </strong></td>
+                            <td>
+                                {!! $order->sku ?? 'N/A' !!}<br>
+                                {{ $order->name ?? 'N/A' }}
+                            </td>
+                            <td>
+                                Qty: {{ $order->quantity }} {{ $order->uom }}<br>
+                                Delivery:
+                                {{ \Carbon\Carbon::parse($order->awarded_date)->addDays($order->days)->format('d M, Y') }}
+                            </td>
+                            <td>
+                                {!! $order->first_name ?? '' !!} {!! $order->last_name ?? '' !!}<br>
+                                Price: {{ $order->price ?? '' }} /-
+                            </td>
+                            <td>
+                                Rs. {!! ($order->price ?? 0) * ($order->quantity ?? 0) !!} /-
+                            </td>
+                            <td class="text-center">
+                                @if($order->status == 'pending')
+                                    <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Initiate</a>
+                                @elseif($order->status == 'active')
+                                    @if($order->auction_end > $now)
+                                        <a href="javascript:void(0)" class="badge bg-success td-none">Acitve</a>
+                                    @else
+                                        <a href="javascript:void(0)" class="badge bg-danger td-none">Select Bid</a>
+                                    @endif
+                                @elseif($order->status == 'awarded')
+                                    <a href="javascript:void(0)" class="badge bg-primary td-none">Order Awarded</a>
+                                @elseif($order->status == 'selected')
+                                    <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Admin to confirm</a>
+                                @elseif($order->status == 'cancelled')
+                                    <a href="javascript:void(0)" class="badge bg-secondary td-none">Cancelled</a>
+                                @else
+                                    <a href="javascript:void(0)" class="badge bg-danger td-none">closed</a>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @if($order->seller_status == 'order-initiated')
+                                    <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Order Initiated</a>
+                                @elseif($order->seller_status == 'order-task-completed')
+                                    <a href="javascript:void(0)" class="badge bg-primary td-none">Order Task Completed</a>
+                                @elseif($order->seller_status == 'delivery-initiated')
+                                    <a href="javascript:void(0)" class="badge bg-warning td-none text-dark">Delivery
+                                        Initiated</a>
+                                @elseif($order->seller_status == 'delivery-completed')
+                                    <a href="javascript:void(0)" class="badge bg-success td-none">Delivery Completed</a>
+                                @elseif($order->seller_status == 'accepted')
+                                    <a href="javascript:void(0)" class="badge bg-success td-none">Delivery Accepted</a>
+                                @else
+                                    <a href="javascript:void(0)" class="badge bg-secondary td-none">--</a>
+                                @endif
+                            </td>
+                            <td class="text-center">{{ \Carbon\Carbon::parse($order->created_at)->format('d M, Y') }}</td>
+                            <td class="text-center" width="90px">
+                                <a href="javascript:void(0)" id="{{ $order->id }}" class="btn btn-sm btn-info view"
+                                    title="View Details" data-page="awardedorders">
+                                    <i class="bx bx-show"></i>
+                                </a>
+                                @if($order->seller_status == 'delivery-completed')
+                                    <a href="/my-account/delivery-acceptance?id={{ $order->id }}&status=accepted"
+                                        class="btn btn-sm btn-success" title="Accepted" data-page="accepted"
+                                        onclick="return confirm('Please check for order completeness in terms of quality and quantity before Delivery Acceptance.')">
+                                        <i class="fas fa-check-circle"></i>
+                                    </a>
+                                @endif
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
                 <tfoot>
@@ -190,42 +198,42 @@
     </div>
 </section>
 @section('footlink')
-<script>
-    new DataTable('#example');
-</script>
-<script>
-    $(document).ready(function() {
-        $('.view').click(function() {
-            var selector = $(this);
-            var selectorId = selector.attr("id");
-            var pagename = selector.attr("data-page");
-            $('.content').html("<div class='spinner'><p style='text-align: center; margin: 35px; font-size: 14px; font-weight: 500; opacity: 0.9;'>Loading...</p></div>");
-            $.ajax({
-                type: 'get',
-                url: "/dbaction",
-                data: {
-                    selectorId: selectorId,
-                    pagename: pagename
-                },
-                beforeSend: function() {
-                    $('.modal').attr("style", "display:flex;width:100%;height:100vh;");
-                },
-                success: function(response) {
-                    $('.content').html(response);
-                    //alert(response);
-                    console.log(response);
-                },
-                complete: function(response) {
-                    //alert(response);
-                    //console.log(response);
-                }
+    <script>
+        new DataTable('#example');
+    </script>
+    <script>
+        $(document).ready(function () {
+            $('.view').click(function () {
+                var selector = $(this);
+                var selectorId = selector.attr("id");
+                var pagename = selector.attr("data-page");
+                $('.content').html("<div class='spinner'><p style='text-align: center; margin: 35px; font-size: 14px; font-weight: 500; opacity: 0.9;'>Loading...</p></div>");
+                $.ajax({
+                    type: 'get',
+                    url: "/dbaction",
+                    data: {
+                        selectorId: selectorId,
+                        pagename: pagename
+                    },
+                    beforeSend: function () {
+                        $('.modal').attr("style", "display:flex;width:100%;height:100vh;");
+                    },
+                    success: function (response) {
+                        $('.content').html(response);
+                        //alert(response);
+                        console.log(response);
+                    },
+                    complete: function (response) {
+                        //alert(response);
+                        //console.log(response);
+                    }
+                });
             });
         });
-    });
-</script>
-<script>
-    document.querySelector('.dismiss').addEventListener('click', function() {
-        document.querySelector('.modal').style.display = 'none';
-    });
-</script>
+    </script>
+    <script>
+        document.querySelector('.dismiss').addEventListener('click', function () {
+            document.querySelector('.modal').style.display = 'none';
+        });
+    </script>
 @endsection

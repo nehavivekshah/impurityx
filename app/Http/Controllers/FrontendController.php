@@ -1303,6 +1303,8 @@ class FrontendController extends Controller
                 ->leftJoin('users as sellers', 'biddings.seller_id', '=', 'sellers.id')
                 ->select(
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'orders.quantity as qty_reqd',
                     'orders.status',
@@ -1342,6 +1344,8 @@ class FrontendController extends Controller
                 ->leftJoin('users as sellers', 'biddings.seller_id', '=', 'sellers.id')
                 ->select(
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'orders.quantity as qty_reqd',
                     'orders.status',
@@ -1380,6 +1384,8 @@ class FrontendController extends Controller
                 ->leftJoin('users as sellers', 'biddings.seller_id', '=', 'sellers.id')
                 ->select(
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'orders.quantity as qty_reqd',
                     'orders.status',
@@ -1987,7 +1993,7 @@ class FrontendController extends Controller
 
                 // Base row
                 $row = [
-                    date('y') . (date('y') + 1) . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT),
+                    (!empty($order->financial_year) && !empty($order->fy_sequence) ? $order->financial_year . '-' . str_pad($order->fy_sequence, 3, '0', STR_PAD_LEFT) : date('y', strtotime($order->created_at)) . (date('y', strtotime($order->created_at)) + 1) . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT)),
                     $order->product_name ?? 'N/A',
                     $order->product_sku ?? 'N/A',
                     $order->product_cas ?? 'N/A',
@@ -2328,6 +2334,8 @@ class FrontendController extends Controller
                     'biddings.id as bidding_id',
                     'biddings.status as bidStatus',
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'products.sku as product_sku',
                     'products.cas_no as product_cas',
@@ -2401,7 +2409,7 @@ class FrontendController extends Controller
 
                 $row = [
                     $sr++,
-                    date('y') . (date('y') + 1) . '-' . str_pad($bid->order_id, 4, '0', STR_PAD_LEFT),
+                    (!empty($bid->financial_year) && !empty($bid->fy_sequence) ? $bid->financial_year . '-' . str_pad($bid->fy_sequence, 3, '0', STR_PAD_LEFT) : date('y', strtotime($bid->order_date)) . (date('y', strtotime($bid->order_date)) + 1) . '-' . str_pad($bid->order_id, 4, '0', STR_PAD_LEFT)),
                     $bid->order_date ? Carbon::parse($bid->order_date)->format('d M, Y') : '',
                     $bid->product_sku,
                     $bid->product_cas,
@@ -3603,9 +3611,13 @@ class FrontendController extends Controller
                 //$last = Communications::orderBy('id', 'desc')->first();
 
                 $orderNo = $request->orderNo; // e.g. "2526-0014"
-                $parts = explode('-', $orderNo); // Split by dash
+                $parts = explode('-', $orderNo);
+                $fy = $parts[0] ?? '';
+                $suffix = (int) end($parts);
 
-                $orderId = (int) end($parts);
+                // Try finding by FY/Sequence
+                $foundOrder = Orders::where('financial_year', $fy)->where('fy_sequence', $suffix)->first();
+                $orderId = $foundOrder ? $foundOrder->id : $suffix;
 
                 $getOrderDetails = Orders::where('id', '=', $orderId)->first();
 
@@ -3802,6 +3814,8 @@ class FrontendController extends Controller
                 ->leftJoin('users as sellers', 'biddings.seller_id', '=', 'sellers.id')
                 ->select(
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'orders.quantity as qty_reqd',
                     'orders.seller_status',
@@ -3842,6 +3856,8 @@ class FrontendController extends Controller
                 //->leftJoin('users as sellers', 'biddings.seller_id', '=', 'sellers.id')
                 ->select(
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'orders.quantity as qty_reqd',
                     'orders.invoice_no',
@@ -3883,6 +3899,8 @@ class FrontendController extends Controller
                 ->leftJoin('usermetas as buyerMetas', 'orders.buyer_id', '=', 'buyerMetas.uid')
                 ->select(
                     'orders.id as order_id',
+                    'orders.financial_year',
+                    'orders.fy_sequence',
                     'orders.created_at as order_date',
                     'orders.quantity as qty_reqd',
                     'orders.invoice_no',
@@ -3994,11 +4012,23 @@ class FrontendController extends Controller
 
         if ($request->seller_status == 'order-initiated') {
 
+            if (!empty($order->financial_year) && !empty($order->fy_sequence)) {
+                $formattedOrderId = $order->financial_year . '-' . str_pad($order->fy_sequence, 3, '0', STR_PAD_LEFT);
+            } else {
+                $month = date('m', strtotime($order->created_at));
+                if ($month >= 4) {
+                    $fy = date('y', strtotime($order->created_at)) . date('y', strtotime('+1 year', strtotime($order->created_at)));
+                } else {
+                    $fy = date('y', strtotime('-1 year', strtotime($order->created_at))) . date('y', strtotime($order->created_at));
+                }
+                $formattedOrderId = $fy . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
+            }
+
             // Prepare mail details
             $details = [
-                'seller_name' => trim(($seller->first_name ?? '') . ' ' . ($seller->last_name ?? '')) ?: ($seller->name ?? 'Seller'),
+                'seller_name' => trim(($seller->first_name ?? '') . ' ' . ($seller->last_name ?? '')) ?: ($seller->name ?? 'User'),
                 'buyer_name' => trim(($buyers->first_name ?? '') . ' ' . ($buyers->last_name ?? '')) ?: 'Buyer',
-                'order_id' => $order->id,
+                'order_id' => $formattedOrderId,
                 'initiated_date' => now()->format('d M Y'),
                 'brand' => 'ImpurityX',
                 'support_email' => 'support@impurityx.com',

@@ -29,49 +29,51 @@ use App\Models\Buyer_product_enquiries;
 
 class SettingsController extends Controller
 {
-    public function getOrderDetails($orderNo){
+    public function getOrderDetails($orderNo)
+    {
         $id = (int) explode('-', $orderNo)[1];
-        
-        $order = Orders::leftJoin('products','orders.product_id','=','products.id')
-            ->select('products.name','products.cas_no','orders.*')
+
+        $order = Orders::leftJoin('products', 'orders.product_id', '=', 'products.id')
+            ->select('products.name', 'products.cas_no', 'orders.*')
             ->where('orders.id', $id)->first(); //->where('orders.status','awarded')
-        
-        if(Auth::User()->id == ($order->buyer_id ?? '')){
+
+        if (Auth::User()->id == ($order->buyer_id ?? '')) {
             return response()->json([
                 'status' => true,
                 'cas_no' => $order->cas_no,
                 'impurity_name' => $order->name
             ]);
         }
-        
-        $biddings = Biddings::where('order_id', $id)->where('status','awarded')->first();
-        
-        if(Auth::User()->id == ($biddings->seller_id ?? '')){
+
+        $biddings = Biddings::where('order_id', $id)->where('status', 'awarded')->first();
+
+        if (Auth::User()->id == ($biddings->seller_id ?? '')) {
             return response()->json([
                 'status' => true,
                 'cas_no' => $order->cas_no,
                 'impurity_name' => $order->name
             ]);
         }
-        
-        if(Auth::User()->role == '1'){
+
+        if (Auth::User()->role == '1') {
             return response()->json([
                 'status' => true,
                 'cas_no' => $order->cas_no,
                 'impurity_name' => $order->name
             ]);
         }
-        
+
         return response()->json([
             'status' => false,
             'message' => 'Order not found'
         ]);
     }
 
-    public function buyerDBaction(Request $request) {
-        
+    public function buyerDBaction(Request $request)
+    {
+
         if ($request->pagename == 'orders') {
-    
+
             $orders = Orders::leftJoin('users', 'users.id', '=', 'orders.buyer_id')
                 ->leftJoin('products', 'products.id', '=', 'orders.product_id')
                 ->select(
@@ -86,8 +88,8 @@ class SettingsController extends Controller
                 )
                 ->where('orders.id', '=', $request->selectorId)
                 ->first();
-    
-            $data  = '<table class="table table-bordered w-100">';
+
+            $data = '<table class="table table-bordered w-100">';
             $data .= '<tr><th>Product:</th><td>' . $orders->proName . '</td></tr>';
             $data .= '<tr><th>CAS No.:</th><td>' . $orders->cas_no . '</td></tr>';
             $data .= '<tr><th>Quantity:</th><td>' . $orders->quantity . ' ' . $orders->uom . '</td></tr>';
@@ -96,11 +98,11 @@ class SettingsController extends Controller
             $data .= '<tr><th>Specific Requirements:</th><td>' . $orders->specific_requirements . '</td></tr>';
             $data .= '<tr><th>Offer end:</th><td>' . $orders->auction_end . '</td></tr>';
             $data .= '</table>';
-    
+
             return $data;
-    
+
         } elseif ($request->pagename == 'awardedorders' || $request->pagename == 'sellerawardedorders' || $request->pagename == 'sellerawardedordersexport') {
-    
+
             $orders = Orders::leftJoin('users', 'users.id', '=', 'orders.buyer_id')
                 ->leftJoin('products', 'products.id', '=', 'orders.product_id')
                 ->leftJoin('biddings', 'orders.id', '=', 'biddings.order_id')
@@ -127,10 +129,10 @@ class SettingsController extends Controller
                     'orders.*'
                 )
                 ->where('orders.id', '=', $request->selectorId)
-                ->where('biddings.status','awarded')
+                ->where('biddings.status', 'awarded')
                 ->first();
-    
-            $data  = '<table class="table table-bordered w-100">';
+
+            $data = '<table class="table table-bordered w-100">';
             $data .= '<tr><th>Product:</th><td>' . $orders->proName . '</td></tr>';
             $data .= '<tr><th>SKU:</th><td>' . $orders->sku . '</td></tr>';
             $data .= '<tr><th>CAS No.:</th><td>' . $orders->cas_no . '</td></tr>';
@@ -138,19 +140,19 @@ class SettingsController extends Controller
             $data .= '<tr><th>Delivery Location:</th><td>' . $orders->delivery_location . '</td></tr>';
             $data .= '<tr><th>Actual Delivery Date:</th><td>' . $orders->delivery_date . '</td></tr>';
             $data .= '<tr><th>Specific Requirements:</th><td>' . $orders->specific_requirements . '</td></tr>';
-            if($request->pagename == 'sellerawardedorders' || $request->pagename == 'sellerawardedordersexport'){
-            $data .= '<tr><th>Buyer Details:</th><td>' . $orders->buyer_fname . ' ' . $orders->buyer_lname . '<br>' . $orders->buyer_email . '</td></tr>';
-            $data .= '<tr><th>Final Bid Price:</th><td> Rs. ' . $orders->price . '/- </td></tr>';
-            $data .= '<tr><th>Storage Temp (°C):</th><td>' . $orders->temp . '</td></tr>';
-            $data .= '<tr><th>Expected Delivery Date:</th><td>' . date('Y-m-d', strtotime($orders->bid_confirmed_date . ' +'.$orders->days.' days')) . '</td></tr>';
-            }else{
-            $data .= '<tr><th>Seller Details:</th><td>' . $orders->company . '<br>' . $orders->email. '<br>' . $orders->mob  . '</td></tr>';
-            $data .= '<tr><th>Storage Temp (°C):</th><td>' . $orders->temp . '</td></tr>';
-            $data .= '<tr><th>Expected Delivery Date:</th><td>' . date('Y-m-d', strtotime($orders->bid_confirmed_date . ' +'.$orders->days.' days')) . '</td></tr>';
-            $data .= '<tr><th>Seller Price:</th><td> Rs. ' . $orders->price . '/- </td></tr>';
+            if ($request->pagename == 'sellerawardedorders' || $request->pagename == 'sellerawardedordersexport') {
+                $data .= '<tr><th>Buyer Details:</th><td>' . $orders->buyer_fname . ' ' . $orders->buyer_lname . '<br>' . $orders->buyer_email . '</td></tr>';
+                $data .= '<tr><th>Final Bid Price:</th><td> Rs. ' . $orders->price . '/- </td></tr>';
+                $data .= '<tr><th>Storage Temp (°C):</th><td>' . $orders->temp . '</td></tr>';
+                $data .= '<tr><th>Expected Delivery Date:</th><td>' . date('Y-m-d', strtotime($orders->bid_confirmed_date . ' +' . $orders->days . ' days')) . '</td></tr>';
+            } else {
+                $data .= '<tr><th>Seller Details:</th><td>' . $orders->company . '<br>' . $orders->email . '<br>' . $orders->mob . '</td></tr>';
+                $data .= '<tr><th>Storage Temp (°C):</th><td>' . $orders->temp . '</td></tr>';
+                $data .= '<tr><th>Expected Delivery Date:</th><td>' . date('Y-m-d', strtotime($orders->bid_confirmed_date . ' +' . $orders->days . ' days')) . '</td></tr>';
+                $data .= '<tr><th>Seller Price:</th><td> Rs. ' . $orders->price . '/- </td></tr>';
             }
             $data .= '</table>';
-            
+
             // --------- EXPORT PDF HERE ---------
             if ($request->pagename == 'sellerawardedordersexport') {
                 $data .= '<style>
@@ -194,11 +196,11 @@ class SettingsController extends Controller
                 $pdf = \PDF::loadHTML($data);
                 return $pdf->download('awarded-order-' . $orders->id . '.pdf');
             }
-    
+
             return $data;
-    
+
         } elseif ($request->pagename == 'bids') {
-        
+
             $biddings = Biddings::leftJoin('users', 'users.id', '=', 'biddings.seller_id')
                 ->leftJoin('orders', 'biddings.order_id', '=', 'orders.id')
                 ->leftJoin('products', 'products.id', '=', 'orders.product_id')
@@ -209,15 +211,15 @@ class SettingsController extends Controller
                     'biddings.*'
                 )
                 ->where('orders.id', '=', $request->selectorId)
-                ->orderBy('id','desc')
+                ->orderBy('id', 'desc')
                 ->get();
-                
+
             $now = now();
-        
+
             $data = '';
-        
+
             if ($biddings->count() > 0) {
-                $data  = '<table class="table table-bordered table-striped table-hover w-100" style="font-size: 14px;">';
+                $data = '<table class="table table-bordered table-striped table-hover w-100" style="font-size: 14px;">';
                 $data .= '<thead><tr>
                             <th>Product Name</th>
                             <th>Price</th>
@@ -227,19 +229,19 @@ class SettingsController extends Controller
                             <th>Offer Time</th>
                             <th>Action</th>
                           </tr></thead><tbody>';
-        
+
                 // Check if any bid is already selected or awarded
-                $bidAlreadyChosen = $biddings->contains(function($b) {
+                $bidAlreadyChosen = $biddings->contains(function ($b) {
                     return in_array($b->status, ['selected', 'awarded']);
                 });
-                
+
                 foreach ($biddings as $bid) {
                     $data .= '<tr>';
                     $data .= '<td>' . $bid->proName . '</td>';
                     $data .= '<td>Rs. ' . $bid->price . '</td>';
                     $data .= '<td>' . $bid->days . '</td>';
                     $data .= '<td>' . $bid->temp . '</td>';
-                
+
                     // Status display with color badges
                     $statusLabel = '';
                     switch ($bid->status) {
@@ -256,7 +258,7 @@ class SettingsController extends Controller
                     }
                     $data .= '<td class="font-weight-bold">' . $statusLabel . '</td>';
                     $data .= '<td>' . $bid->created_at . '</td>';
-                
+
                     // Show select button only if:
                     // - No bid already chosen
                     // - Current bid is pending
@@ -269,7 +271,7 @@ class SettingsController extends Controller
                     } else {
                         $data .= '<td><span class="text-muted">--</span></td>';
                     }
-                
+
                     $data .= '</tr>';
                 }
 
@@ -298,89 +300,88 @@ class SettingsController extends Controller
             } else {
                 $data .= '<p class="text-center">No Offer yet for this Order</p>';
             }
-    
+
             return $data;
-            
-        }  elseif ($request->pagename == 'bidselected') {
-                
+
+        } elseif ($request->pagename == 'bidselected') {
+
             $bid = Biddings::find($request->selectorId);
 
             if ($bid) {
-                
+
                 $bid->status = 'selected';
-                
+
                 $order = Orders::find($bid->order_id);
                 $order->status = 'selected';
                 $order->save();
-                
+
                 $bid->save();
-                
+
                 // Get buyer info
                 $buyer = User::find($order->buyer_id);
-                
-                $month = date('m', strtotime($order->created_at));
-                $year = date('Y', strtotime($order->created_at));
-                
-                if ($month >= 3) {
-                    // March to Dec
-                    $fy_start = date('y', strtotime($order->created_at));
-                    $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
+
+                if (!empty($order->financial_year) && !empty($order->fy_sequence)) {
+                    $formattedOrderId = $order->financial_year . '-' . str_pad($order->fy_sequence, 3, '0', STR_PAD_LEFT);
                 } else {
-                    // Jan-Feb
-                    $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
-                    $fy_end = date('y', strtotime($order->created_at));
+                    $month = date('m', strtotime($order->created_at));
+                    if ($month >= 4) {
+                        $fy_start = date('y', strtotime($order->created_at));
+                        $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
+                    } else {
+                        $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
+                        $fy_end = date('y', strtotime($order->created_at));
+                    }
+                    $formattedOrderId = $fy_start . '' . $fy_end . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
                 }
-                
-                $financialYear = $fy_start . '' . $fy_end;
-            
+
                 if ($buyer && $buyer->email) {
                     $details = [
                         'buyer_name' => $buyer->first_name . ' ' . $buyer->last_name,
-                        'order_id'   => $financialYear .'-'. str_pad($order->id, 4, '0', STR_PAD_LEFT),
+                        'order_id' => $formattedOrderId,
                     ];
-            
-                    $subject  = "Your Selected Offer Has Been Received – Thank You for Choosing ImpurityX";
+
+                    $subject = "Your Selected Offer Has Been Received – Thank You for Choosing ImpurityX";
                     $template = "emails.offer_selected_notification";
-            
+
                     Mail::to($buyer->email)->send(new MailModel($details, $subject, $template));
                 }
-                
+
                 return response()->json(['status' => 'success', 'message' => 'Bid Selected Successfully']);
             }
-            
+
             return response()->json(['status' => 'error', 'message' => 'Bid not found'], 404);
-        }
-        elseif($request->pagename == 'reject_order'){
-            
+        } elseif ($request->pagename == 'reject_order') {
+
             $settings = Orders::find($request->selectorId);
-            
+
             $settings->reject_order = $request->reason;
             $settings->status = 'cancelled';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Order rejected successfully!'
             ]);
-                
-        }elseif($request->pagename == 'noticeview'){
-            
+
+        } elseif ($request->pagename == 'noticeview') {
+
             $notices = Notices::find($request->selectorId);
-            
-            $output = '<strong>'.$notices ? $notices->notice_id."</strong><br>" : '';
+
+            $output = '<strong>' . $notices ? $notices->notice_id . "</strong><br>" : '';
             $output .= $notices ? $notices->message : '';
-            
+
             return $output;
-            
+
         }
     }
-    
-    public function dbAction(Request $request) {
-        
-        if($request->pagename == 'orders'):
-            
+
+    public function dbAction(Request $request)
+    {
+
+        if ($request->pagename == 'orders'):
+
             $orders = Orders::leftJoin('users', 'users.id', '=', 'orders.buyer_id')
                 ->leftJoin('products', 'products.id', '=', 'orders.product_id')
                 ->select(
@@ -394,7 +395,7 @@ class SettingsController extends Controller
                 )
                 ->where('orders.id', '=', $request->selectorId)
                 ->first();
-            
+
             $biddings = Biddings::leftJoin('users', 'users.id', '=', 'biddings.seller_id')
                 ->leftJoin('orders', 'biddings.order_id', '=', 'orders.id')
                 ->select(
@@ -406,25 +407,24 @@ class SettingsController extends Controller
                 )
                 ->where('orders.id', '=', $request->selectorId)
                 ->get();
-                
-            $month = date('m', strtotime($orders->created_at));
-            $year = date('Y', strtotime($orders->created_at));
-            
-            if ($month >= 3) {
-                // March to Dec
-                $fy_start = date('y', strtotime($orders->created_at));
-                $fy_end = date('y', strtotime('+1 year', strtotime($orders->created_at)));
+
+            if (!empty($orders->financial_year) && !empty($orders->fy_sequence)) {
+                $formattedOrderId = $orders->financial_year . '-' . str_pad($orders->fy_sequence, 3, '0', STR_PAD_LEFT);
             } else {
-                // Jan-Feb
-                $fy_start = date('y', strtotime('-1 year', strtotime($orders->created_at)));
-                $fy_end = date('y', strtotime($orders->created_at));
+                $month = date('m', strtotime($orders->created_at));
+                if ($month >= 4) {
+                    $fy_start = date('y', strtotime($orders->created_at));
+                    $fy_end = date('y', strtotime('+1 year', strtotime($orders->created_at)));
+                } else {
+                    $fy_start = date('y', strtotime('-1 year', strtotime($orders->created_at)));
+                    $fy_end = date('y', strtotime($orders->created_at));
+                }
+                $formattedOrderId = $fy_start . '' . $fy_end . '-' . str_pad($orders->id, 4, '0', STR_PAD_LEFT);
             }
-            
-            $financialYear = $fy_start . '' . $fy_end;
-            
+
             $data = '<table class="table table-bordered w-100">';
             $data .= '<tr><th colspan="2">Order Details</th></tr>';
-            $data .= '<tr><th>Order Id:</th><td>' . $financialYear . '-' . str_pad($orders->id, 4, '0', STR_PAD_LEFT) . '</td></tr>';
+            $data .= '<tr><th>Order Id:</th><td>' . $formattedOrderId . '</td></tr>';
             $data .= '<tr><th>Product:</th><td>' . $orders->proName . '</td></tr>';
             $data .= '<tr><th>Buyer:</th><td>' . $orders->buyer_fname . ' ' . $orders->buyer_lname . '</td></tr>';
             $data .= '<tr><th>Mobile:</th><td>' . $orders->buyer_mobile . '</td></tr>';
@@ -435,12 +435,12 @@ class SettingsController extends Controller
             $data .= '<tr><th>Specific Requirements:</th><td>' . $orders->specific_requirements . '</td></tr>';
             $data .= '<tr><th>Auction End:</th><td>' . $orders->auction_end . '</td></tr>';
             $data .= '</table>';
-            
+
             if ($biddings->count() > 0) {
                 $data .= '<h5 class="mt-4">Biddings</h5>';
                 $data .= '<table class="table table-bordered w-100">';
                 $data .= '<thead><tr><th>Seller</th><th>Mobile</th><th>Email</th><th>Price</th><th>Days</th><th>Temp</th><th>Status</th><th>Bid Time</th></tr></thead><tbody>';
-                
+
                 foreach ($biddings as $bid) {
                     $data .= '<tr>';
                     $data .= '<td>' . $bid->seller_fname . ' ' . $bid->seller_lname . '</td>';
@@ -449,17 +449,17 @@ class SettingsController extends Controller
                     $data .= '<td>Rs. ' . $bid->price . '</td>';
                     $data .= '<td>' . $bid->days . '</td>';
                     $data .= '<td>' . $bid->temp . '</td>';
-                    if($bid->status == 'selected'){
-                    $data .= '<td class="badge bg-success text-white mt-1">' . $bid->status . '</td>';
-                    }elseif($bid->status == 'pending' && $orders->status == 'selected'){
-                    $data .= '<td class="badge bg-secondary text-white mt-1 cursor-pointer transferOrder" data-bid-id="'.$bid->id.'">Transfer Order</td>';
-                    }else{
-                    $data .= '<td>' . $bid->status . '</td>';
+                    if ($bid->status == 'selected') {
+                        $data .= '<td class="badge bg-success text-white mt-1">' . $bid->status . '</td>';
+                    } elseif ($bid->status == 'pending' && $orders->status == 'selected') {
+                        $data .= '<td class="badge bg-secondary text-white mt-1 cursor-pointer transferOrder" data-bid-id="' . $bid->id . '">Transfer Order</td>';
+                    } else {
+                        $data .= '<td>' . $bid->status . '</td>';
                     }
                     $data .= '<td>' . $bid->created_at . '</td>';
                     $data .= '</tr>';
                 }
-            
+
                 $data .= '</tbody></table>
                 <script>
                     $(document).on("click", ".transferOrder", function() {
@@ -486,195 +486,194 @@ class SettingsController extends Controller
             } else {
                 $data .= '<p>No biddings yet for this order.</p>';
             }
-            
+
             return $data;
-                
+
         elseif ($request->pagename == 'bidselected'):
-                
+
             $bid = Biddings::find($request->selectorId);
-            
-            $selectedBiddings = Biddings::where('order_id',$bid->order_id)->get();
-            
+
+            $selectedBiddings = Biddings::where('order_id', $bid->order_id)->get();
+
             foreach ($selectedBiddings as $selectedBidding):
-                
-                if($selectedBidding->status == 'selected'):
-                    
+
+                if ($selectedBidding->status == 'selected'):
+
                     $selectedBidding->status = 'transfered';
                     $selectedBidding->save();
-                    
+
                 endif;
-                
+
             endforeach;
-            
+
             if ($bid) {
-                
+
                 $bid->status = 'selected';
-                
+
                 $order = Orders::find($bid->order_id);
                 $order->status = 'selected';
                 $order->save();
-                
+
                 $bid->save();
-                
+
                 // Get buyer info
                 $buyer = User::find($order->buyer_id);
-                
-                $month = date('m', strtotime($order->created_at));
-                $year = date('Y', strtotime($order->created_at));
-                
-                if ($month >= 3) {
-                    // March to Dec
-                    $fy_start = date('y', strtotime($order->created_at));
-                    $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
+
+                if (!empty($order->financial_year) && !empty($order->fy_sequence)) {
+                    $formattedOrderId = $order->financial_year . '-' . str_pad($order->fy_sequence, 3, '0', STR_PAD_LEFT);
                 } else {
-                    // Jan-Feb
-                    $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
-                    $fy_end = date('y', strtotime($order->created_at));
+                    $month = date('m', strtotime($order->created_at));
+                    if ($month >= 4) {
+                        $fy_start = date('y', strtotime($order->created_at));
+                        $fy_end = date('y', strtotime('+1 year', strtotime($order->created_at)));
+                    } else {
+                        $fy_start = date('y', strtotime('-1 year', strtotime($order->created_at)));
+                        $fy_end = date('y', strtotime($order->created_at));
+                    }
+                    $formattedOrderId = $fy_start . '' . $fy_end . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
                 }
-                
-                $financialYear = $fy_start . '' . $fy_end;
-            
+
                 if ($buyer && $buyer->email) {
                     $details = [
                         'buyer_name' => $buyer->first_name . ' ' . $buyer->last_name,
-                        'order_id'   => $financialYear .'-'. str_pad($order->id, 4, '0', STR_PAD_LEFT),
+                        'order_id' => $formattedOrderId,
                     ];
-            
-                    $subject  = "Your Selected Offer Has Been Received – Thank You for Choosing ImpurityX";
+
+                    $subject = "Your Selected Offer Has Been Received – Thank You for Choosing ImpurityX";
                     $template = "emails.offer_selected_notification";
-            
+
                     Mail::to($buyer->email)->send(new MailModel($details, $subject, $template));
                 }
-                
+
                 return response()->json(['status' => 'success', 'message' => 'Bid Selected Successfully']);
             }
-            
+
             return response()->json(['status' => 'error', 'message' => 'Bid not found'], 404);
-            
-        elseif($request->pagename == 'delorders'):
-            
-            $settings = Orders::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'delorders'):
+
+            $settings = Orders::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'orderStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'orderStatus1'):
+
             $settings = Orders::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'orderStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'orderStatus2'):
+
             $settings = Orders::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-                
-        elseif($request->pagename.$request->rowstatus == 'orderSellerView1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'orderSellerView1'):
+
             $settings = Orders::find($request->rowid);
-            
+
             $settings->bid_view_status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'orderSellerView0'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'orderSellerView0'):
+
             $settings = Orders::find($request->rowid);
-            
+
             $settings->bid_view_status = '0';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-                
-        elseif($request->pagename == 'delpostStatus'):
-            
-            $settings = Posts::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'delpostStatus'):
+
+            $settings = Posts::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'postStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'postStatus1'):
+
             $settings = Posts::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'postStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'postStatus2'):
+
             $settings = Posts::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-                
-        elseif($request->pagename == 'delpostCategoryStatus'):
-            
-            $settings = Post_categories::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'delpostCategoryStatus'):
+
+            $settings = Post_categories::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'postCategoryStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'postCategoryStatus1'):
+
             $settings = Post_categories::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'postCategoryStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'postCategoryStatus2'):
+
             $settings = Post_categories::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-            
-        elseif($request->pagename == 'delBidStatus'):
-            
-            $settings = Biddings::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'delBidStatus'):
+
+            $settings = Biddings::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename == 'User'):
-            
+
+        elseif ($request->pagename == 'User'):
+
             //`company`, `trade`, `panno`, `vat`, `regAddress`, `comAddress`, `city`, `pincode`, `state`, `country`
             $users = User::leftJoin('usermetas', 'users.id', '=', 'usermetas.uid')
                 ->where('users.id', '=', $request->selectorId)
                 ->first();
-            
-            $data  = '<table class="table table-bordered w-100">';
+
+            $data = '<table class="table table-bordered w-100">';
             $data .= '<tr><th>Name:</th><td>' . ($users->first_name ?? '') . ' ' . ($users->last_name ?? '') . '</td></tr>';
             $data .= '<tr><th>Mobile No.:</th><td>' . ($users->mob ?? '-') . '</td></tr>';
             $data .= '<tr><th>Email Id:</th><td>' . ($users->email ?? '-') . '</td></tr>';
-            
+
             if (!empty($users->whatsapp)) {
                 $data .= '<tr><th>Whatsapp No.:</th><td>' . $users->whatsapp . '</td></tr>';
             }
@@ -708,14 +707,14 @@ class SettingsController extends Controller
             if (!empty($users->country)) {
                 $data .= '<tr><th>Country:</th><td>' . $users->country . '</td></tr>';
             }
-            
+
             $data .= '</table>';
-            
+
             return $data;
 
-            
-        elseif($request->pagename == 'delUserStatus'):
-            
+
+        elseif ($request->pagename == 'delUserStatus'):
+
             $getuser = User::where('id', $request->rowid)->first();
 
             if ($getuser && $getuser->role == '5') {
@@ -735,52 +734,52 @@ class SettingsController extends Controller
                     return "seller_not_deleted";
                 }
             }
-            
+
             return "false";
 
-        elseif($request->pagename.$request->rowstatus == 'userStatus1'):
-            
+        elseif ($request->pagename . $request->rowstatus == 'userStatus1'):
+
             $settings = User::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'userStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'userStatus2'):
+
             $settings = User::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-        
-        elseif($request->pagename == 'delCategory'):
-            
-            $settings = Categories::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'delCategory'):
+
+            $settings = Categories::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'CategoryStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'CategoryStatus1'):
+
             $settings = Categories::find($request->rowid);
-            
+
             /*$settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();*/
-            
+
             if ($settings) {
                 // Update category
                 $settings->status = 1;
                 $settings->updated_at = now();
                 $settings->save();
-            
+
                 // Update related products
                 Products::where('category', $request->rowid)
                     ->update([
@@ -788,24 +787,24 @@ class SettingsController extends Controller
                         'updated_at' => now(),
                     ]);
             }
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'CategoryStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'CategoryStatus2'):
+
             $settings = Categories::find($request->rowid);
-            
+
             /*$settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();*/
-            
+
             if ($settings) {
                 // Update category
                 $settings->status = 2;
                 $settings->updated_at = now();
                 $settings->save();
-            
+
                 // Update related products
                 Products::where('category', $request->rowid)
                     ->update([
@@ -813,124 +812,124 @@ class SettingsController extends Controller
                         'updated_at' => now(),
                     ]);
             }
-            
+
             return "deactivate";
-            
-        elseif($request->pagename == 'productDelete'):
-            
-            $settings = Products::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'productDelete'):
+
+            $settings = Products::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'productStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'productStatus1'):
+
             $settings = Products::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'productStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'productStatus2'):
+
             $settings = Products::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-            
-        elseif($request->pagename == 'delpageStatus'):
-            
-            $settings = Pages::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'delpageStatus'):
+
+            $settings = Pages::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'pageStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'pageStatus1'):
+
             $settings = Pages::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'pageStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'pageStatus2'):
+
             $settings = Pages::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-                
-        elseif($request->pagename == 'delSlider'):
-            
-            $settings = Sliders::where('id',$request->rowid)->delete();
-            
+
+        elseif ($request->pagename == 'delSlider'):
+
+            $settings = Sliders::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'sliderStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'sliderStatus1'):
+
             $settings = Sliders::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'sliderStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'sliderStatus2'):
+
             $settings = Sliders::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-            
-                
-        elseif($request->pagename == 'delGallery'):
-            
-            $settings = Galleries::where('id',$request->rowid)->delete();
-            
+
+
+        elseif ($request->pagename == 'delGallery'):
+
+            $settings = Galleries::where('id', $request->rowid)->delete();
+
             return "true";
-                
-        elseif($request->pagename.$request->rowstatus == 'galleryStatus1'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'galleryStatus1'):
+
             $settings = Galleries::find($request->rowid);
-            
+
             $settings->status = '1';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "activate";
-                
-        elseif($request->pagename.$request->rowstatus == 'galleryStatus2'):
-            
+
+        elseif ($request->pagename . $request->rowstatus == 'galleryStatus2'):
+
             $settings = Galleries::find($request->rowid);
-            
+
             $settings->status = '2';
             $settings->updated_at = Now();
-            
+
             $settings->update();
-            
+
             return "deactivate";
-            
-        elseif($request->pagename == 'rnpo'):
-            
+
+        elseif ($request->pagename == 'rnpo'):
+
             $getRnpo = Buyer_product_enquiries::leftJoin('products', 'buyer_product_enquiries.product_id', '=', 'products.id')
                 ->leftJoin('orders', 'buyer_product_enquiries.order_id', '=', 'orders.id')
                 ->select(
@@ -959,48 +958,48 @@ class SettingsController extends Controller
                 ->where('buyer_product_enquiries.id', $request->selectorId)
                 ->orderBy('buyer_product_enquiries.id', 'desc')
                 ->first();
-            
-            $data  = '<div class="card p-0 border-0">';
+
+            $data = '<div class="card p-0 border-0">';
             $data .= '<div class="card-body p-0" style="background-color: #f4f6f9; max-height: 450px; overflow-y: auto;">';
-            
+
             $data .= '<table class="table table-bordered table-striped mb-0">';
             $data .= '<tbody>';
-            
+
             $data .= '<tr><th width="30%">Request ID</th><td>#' . $getRnpo->request_id . '</td></tr>';
-            
-            if (!empty($getRnpo->name)) 
+
+            if (!empty($getRnpo->name))
                 $data .= '<tr><th>Product Name</th><td>' . $getRnpo->name . '</td></tr>';
-            
-            if (!empty($getRnpo->cas_no)) 
+
+            if (!empty($getRnpo->cas_no))
                 $data .= '<tr><th>CAS Number</th><td>' . $getRnpo->cas_no . '</td></tr>';
-            
-            if (!empty($getRnpo->synonym)) 
+
+            if (!empty($getRnpo->synonym))
                 $data .= '<tr><th>Synonym</th><td>' . $getRnpo->synonym . '</td></tr>';
-            
-            if (!empty($getRnpo->impurity_type)) 
+
+            if (!empty($getRnpo->impurity_type))
                 $data .= '<tr><th>Type</th><td>' . ucfirst($getRnpo->impurity_type) . '</td></tr>';
-            
-            if (!empty($getRnpo->purity)) 
+
+            if (!empty($getRnpo->purity))
                 $data .= '<tr><th>Purity</th><td>' . $getRnpo->purity . '%</td></tr>';
-            
-            if (!empty($getRnpo->potency)) 
+
+            if (!empty($getRnpo->potency))
                 $data .= '<tr><th>Potency</th><td>' . $getRnpo->potency . '</td></tr>';
-            
-            if (!empty($getRnpo->des)) 
+
+            if (!empty($getRnpo->des))
                 $data .= '<tr><th>Description</th><td>' . $getRnpo->des . '</td></tr>';
-            
-            if (!empty($getRnpo->quantity)) 
+
+            if (!empty($getRnpo->quantity))
                 $data .= '<tr><th>Quantity</th><td>' . $getRnpo->quantity . ' ' . ($getRnpo->uom ?? '') . '</td></tr>';
-            
-            if (!empty($getRnpo->delivery_date)) 
+
+            if (!empty($getRnpo->delivery_date))
                 $data .= '<tr><th>Delivery Date</th><td>' . \Carbon\Carbon::parse($getRnpo->delivery_date)->format('d M Y') . '</td></tr>';
-            
-            if (!empty($getRnpo->delivery_location)) 
+
+            if (!empty($getRnpo->delivery_location))
                 $data .= '<tr><th>Delivery Location</th><td>' . $getRnpo->delivery_location . '</td></tr>';
-            
-            if (!empty($getRnpo->specific_requirements)) 
+
+            if (!empty($getRnpo->specific_requirements))
                 $data .= '<tr><th>Specific Requirements</th><td>' . $getRnpo->specific_requirements . '</td></tr>';
-            
+
             if (!empty($getRnpo->attachments)) {
                 $files = json_decode($getRnpo->attachments, true);
                 if ($files) {
@@ -1011,88 +1010,88 @@ class SettingsController extends Controller
                     $data .= '</td></tr>';
                 }
             }
-            
+
             $data .= '</tbody></table>';
             $data .= '</div>'; // card-body
-            
-            $data .= '<div class="card-footer bg-light text-center small text-muted">Last updated: ' 
-                   . ($getRnpo->updated_at ? \Carbon\Carbon::parse($getRnpo->updated_at)->format('d M Y, h:i A') : 'N/A') 
-                   . '</div>';
-            
+
+            $data .= '<div class="card-footer bg-light text-center small text-muted">Last updated: '
+                . ($getRnpo->updated_at ? \Carbon\Carbon::parse($getRnpo->updated_at)->format('d M Y, h:i A') : 'N/A')
+                . '</div>';
+
             $data .= '</div>'; // card
-            
+
             return $data;
-            
+
         elseif (($request->pagename == 'csreply') || ($request->pagename == 'csAreply')):
-        
+
             $communication = Communications::findOrFail($request->selectorId);
-        
-            if($request->pagename == 'csreply'){
-                $data  = '<form action="/admin/supports" method="post">';
-            }else{
-                $data  = '<form action="/admin/communication-sellers" method="post">';
+
+            if ($request->pagename == 'csreply') {
+                $data = '<form action="/admin/supports" method="post">';
+            } else {
+                $data = '<form action="/admin/communication-sellers" method="post">';
             }
-            
+
             $data .= csrf_field(); // Laravel CSRF token
             $data .= '<div class="form-group">';
             $data .= '    <input type="hidden" name="ruid" value="' . $request->selectorId . '" />';
             $data .= '</div>';
-        
+
             $data .= '<div class="form-group">';
-            $data .= '    <textarea class="form-control" name="rmsg" rows="5" placeholder="Write here your message..." required>'.($communication->reply ?? '').'</textarea>';
+            $data .= '    <textarea class="form-control" name="rmsg" rows="5" placeholder="Write here your message..." required>' . ($communication->reply ?? '') . '</textarea>';
             $data .= '</div>';
-        
+
             $data .= '<div class="form-group text-right">';
             $data .= '    <button type="submit" class="btn btn-primary">Submit</button>';
             $data .= '</div>';
             $data .= '</form>';
-        
+
             return $data;
-        
-        elseif($request->pagename == 'noticeview'):
-            
+
+        elseif ($request->pagename == 'noticeview'):
+
             $notices = Notices::find($request->selectorId);
-            
-            $output = '<strong>'.$notices ? $notices->notice_id."</strong><br>" : '';
+
+            $output = '<strong>' . $notices ? $notices->notice_id . "</strong><br>" : '';
             $output .= $notices ? $notices->message : '';
-            
+
             return $output;
 
-                
-        elseif($request->pagename == 'csupport'):
-            
+
+        elseif ($request->pagename == 'csupport'):
+
             $communications = Communications::find($request->selectorId);
-            
+
             $output = $communications ? $communications->message : '';
-            
+
             return $output;
 
-                
-        elseif($request->pagename == 'cseller'):
-            
+
+        elseif ($request->pagename == 'cseller'):
+
             $communications = Communications::find($request->selectorId);
-            
-            $output = $communications ? '<strong>Impurity Name:</strong> '.$communications->impurity_name."<br>" : '';
+
+            $output = $communications ? '<strong>Impurity Name:</strong> ' . $communications->impurity_name . "<br>" : '';
             $output .= $communications ? $communications->message : '';
-            
+
             return $output;
 
-                
+
         endif;
 
     }
-    
+
     public function getOrderEditDetails($id)
     {
         $order = Orders::find($id);
-    
+
         if (!$order) {
             return response()->json(['success' => false]);
         }
-    
+
         return response()->json(['success' => true, 'data' => $order]);
     }
-    
+
     public function updateOrderDetails(Request $request)
     {
         $validated = $request->validate([
@@ -1103,12 +1102,12 @@ class SettingsController extends Controller
             'specific_requirements' => 'nullable|string',
             'attachments.*' => 'nullable|file|max:2048|mimes:jpg,jpeg,png,pdf,doc,docx,xls,xlsx',
         ]);
-    
+
         $order = Orders::find($validated['order_id']);
-    
+
         //$uploadedFiles = json_decode($order->attachments ?? '[]', true);
         $uploadedFiles = [];
-        
+
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 if ($file->isValid()) {
@@ -1118,7 +1117,7 @@ class SettingsController extends Controller
                 }
             }
         }
-    
+
         $order->update([
             'quantity' => $validated['quantity'],
             'delivery_date' => $validated['delivery_date'],
@@ -1126,52 +1125,55 @@ class SettingsController extends Controller
             'specific_requirements' => $validated['specific_requirements'] ?? null,
             'attachments' => json_encode($uploadedFiles),
         ]);
-    
+
         return redirect()->back()->with('success', 'Order details updated successfully.');
     }
-    
-    public function notices(Request $request) {
-        
-        $notices = Notices::orderBy('id', 'desc')->get();
-        
-        return view('backend.notices',['notices'=>$notices]);
-    }
-    
-    public function manageNotice(Request $request) {
 
-        if(!empty($request->id)){
-            $getNotice = Notices::where('id',$request->id)->first();
-        }
-        
-        $noticeId = 'NOTICE-' . strtoupper(uniqid());
-        
-        return view('backend.manageNotice',['noticeId'=>$noticeId,'getNotice'=>($getNotice ?? [])]);
+    public function notices(Request $request)
+    {
+
+        $notices = Notices::orderBy('id', 'desc')->get();
+
+        return view('backend.notices', ['notices' => $notices]);
     }
-    
-    public function manageNoticePost(Request $request) {
+
+    public function manageNotice(Request $request)
+    {
+
+        if (!empty($request->id)) {
+            $getNotice = Notices::where('id', $request->id)->first();
+        }
+
+        $noticeId = 'NOTICE-' . strtoupper(uniqid());
+
+        return view('backend.manageNotice', ['noticeId' => $noticeId, 'getNotice' => ($getNotice ?? [])]);
+    }
+
+    public function manageNoticePost(Request $request)
+    {
 
         $request->validate([
-            'notice_id'  => 'required',
-            'type'       => 'required',
-            'message'    => 'nullable|string',
+            'notice_id' => 'required',
+            'type' => 'required',
+            'message' => 'nullable|string',
         ]);
-        
+
         $notice = new Notices();
-        $notice->notice_id      = $request->notice_id;
-        $notice->message        = $request->message;
-        $notice->type           = $request->type;
-        $notice->status         = "0";
+        $notice->notice_id = $request->notice_id;
+        $notice->message = $request->message;
+        $notice->type = $request->type;
+        $notice->status = "0";
 
         $notice->save();
-        
-        if($request->type == 'sellers'){
-            $users = User::where('role','4')->where('status','1')->get();
-        }else{
-            $users = User::where('role','5')->where('status','1')->get();
+
+        if ($request->type == 'sellers') {
+            $users = User::where('role', '4')->where('status', '1')->get();
+        } else {
+            $users = User::where('role', '5')->where('status', '1')->get();
         }
         if ($users) {
-            foreach($users as $user){
-                $notify = json_decode(($user->notify ?? ''),true) ?? [];
+            foreach ($users as $user) {
+                $notify = json_decode(($user->notify ?? ''), true) ?? [];
                 if (!is_array($notify)) {
                     $notify = [];
                 }
@@ -1180,78 +1182,83 @@ class SettingsController extends Controller
                 $user->save();
             }
         }
-        
-        return redirect()->back()->with('success', 'Notice Sent successfully!');
-        
-    }
-    
-    public function supports(Request $request) {
 
-        if(!empty($request->id)){
-            $getCom = Communications::where('id',$request->id)->first();
-        }
-        
-        $communications = Communications::leftJoin('users','communications.user_id','=','users.id')
-            ->leftJoin('users as sellers','communications.seller_id','=','sellers.id')
-            ->select('users.first_name','users.last_name','users.email','sellers.first_name as seller_fname','sellers.last_name as seller_lname','sellers.email as seller_email','communications.*')
-            ->where('communications.type','1')->orderBy('communications.id', 'desc')->get();
-        
-        $communicationId = 'COM-' . strtoupper(uniqid());
-        
-        return view('backend.supports',['communications'=>$communications,'communicationId'=>$communicationId,'getCom'=>($getCom ?? [])]);
+        return redirect()->back()->with('success', 'Notice Sent successfully!');
+
     }
-    
-    public function supportPost(Request $request) {
+
+    public function supports(Request $request)
+    {
+
+        if (!empty($request->id)) {
+            $getCom = Communications::where('id', $request->id)->first();
+        }
+
+        $communications = Communications::leftJoin('users', 'communications.user_id', '=', 'users.id')
+            ->leftJoin('users as sellers', 'communications.seller_id', '=', 'sellers.id')
+            ->select('users.first_name', 'users.last_name', 'users.email', 'sellers.first_name as seller_fname', 'sellers.last_name as seller_lname', 'sellers.email as seller_email', 'communications.*')
+            ->where('communications.type', '1')->orderBy('communications.id', 'desc')->get();
+
+        $communicationId = 'COM-' . strtoupper(uniqid());
+
+        return view('backend.supports', ['communications' => $communications, 'communicationId' => $communicationId, 'getCom' => ($getCom ?? [])]);
+    }
+
+    public function supportPost(Request $request)
+    {
 
         $request->validate([
-            'ruid'  => 'required',
+            'ruid' => 'required',
             'reply' => 'nullable|string',
         ]);
 
         $communication = Communications::findOrFail($request->ruid);
 
-        $communication->reply            = $request->rmsg;
-        $communication->status           = "closed";
+        $communication->reply = $request->rmsg;
+        $communication->status = "closed";
 
         $communication->save();
-        
-        return redirect()->back()->with('success', 'Communication updated successfully!');
-        
-    }
-    
-    public function communicationSellers(Request $request) {
 
-        if(!empty($request->id)){
-            $getCom = Communications::where('id',$request->id)->first();
-        }
-        
-        $communications = Communications::leftJoin('users','communications.user_id','=','users.id')
-            ->leftJoin('users as sellers','communications.seller_id','=','sellers.id')
-            ->select('users.first_name','users.last_name','users.email','sellers.first_name as seller_fname','sellers.last_name as seller_lname','sellers.email as seller_email','communications.*')
-            ->where('communications.type','0')->orderBy('communications.id', 'desc')->get();
-        
-        //$communications = Buyer_product_enquiries::orderBy('id', 'desc')->get();
-        
-        $communicationId = 'CBS-' . strtoupper(uniqid());
-        
-        return view('backend.communicationSellers',['communications'=>$communications,'communicationId'=>$communicationId,'getCom'=>($getCom ?? [])]);
+        return redirect()->back()->with('success', 'Communication updated successfully!');
+
     }
-    
-    public function manageCommunicationSellers(Request $request) {
-        
-        $getCom = Communications::where('id',$request->id)->first();
-        
-        if(!empty($request->p) && ($request->p == "buyer")){
+
+    public function communicationSellers(Request $request)
+    {
+
+        if (!empty($request->id)) {
+            $getCom = Communications::where('id', $request->id)->first();
+        }
+
+        $communications = Communications::leftJoin('users', 'communications.user_id', '=', 'users.id')
+            ->leftJoin('users as sellers', 'communications.seller_id', '=', 'sellers.id')
+            ->select('users.first_name', 'users.last_name', 'users.email', 'sellers.first_name as seller_fname', 'sellers.last_name as seller_lname', 'sellers.email as seller_email', 'communications.*')
+            ->where('communications.type', '0')->orderBy('communications.id', 'desc')->get();
+
+        //$communications = Buyer_product_enquiries::orderBy('id', 'desc')->get();
+
+        $communicationId = 'CBS-' . strtoupper(uniqid());
+
+        return view('backend.communicationSellers', ['communications' => $communications, 'communicationId' => $communicationId, 'getCom' => ($getCom ?? [])]);
+    }
+
+    public function manageCommunicationSellers(Request $request)
+    {
+
+        $getCom = Communications::where('id', $request->id)->first();
+
+        if (!empty($request->p) && ($request->p == "buyer")) {
             $communicationId = 'CBS-' . strtoupper(uniqid());
-        }else{
+        } else {
             $communicationId = 'CSB-' . strtoupper(uniqid());
         }
-        
-        return view('backend.manageCommunicationSellers',['communicationId'=>$communicationId,'getCom'=>($getCom ?? [])]);
+
+        return view('backend.manageCommunicationSellers', ['communicationId' => $communicationId, 'getCom' => ($getCom ?? [])]);
 
     }
 
-    public function manageCommunicationSellersPost(Request $request) {
+    public function manageCommunicationSellersPost(Request $request)
+    {
 
         $request->validate([
             'communicationId' => 'required|string',
@@ -1260,20 +1267,20 @@ class SettingsController extends Controller
             'impurityName' => 'nullable|string',
             'message' => 'required|string',
         ]);
-    
+
         // Generate Communication ID
         //$last = Communications::orderBy('id', 'desc')->first();
-        
+
         $orderNo = $request->orderNo; // e.g. "2526-0014"
         $parts = explode('-', $orderNo); // Split by dash
-        
+
         $orderId = (int) end($parts);
-        
-        $getBiddingDetails = Biddings::where('order_id','=',$orderId)
-            ->where('status','=','awarded')->first();
-        
-        $getOrderDetails = Orders::where('id','=',$orderId)->first();
-        
+
+        $getBiddingDetails = Biddings::where('order_id', '=', $orderId)
+            ->where('status', '=', 'awarded')->first();
+
+        $getOrderDetails = Orders::where('id', '=', $orderId)->first();
+
         // Save to DB
         $comm = new Communications();
         $comm->communication_id = $request->communicationId;
@@ -1285,47 +1292,51 @@ class SettingsController extends Controller
         $comm->seller_id = $getBiddingDetails->seller_id;
         $comm->type = '0';
         $comm->save();
-    
-        return redirect()->back()->with('success', 'Message sent successfully!');
-            
-    }
-    
-    public function action() {
 
-        if(Auth::user()->role == '11'):
+        return redirect()->back()->with('success', 'Message sent successfully!');
+
+    }
+
+    public function action()
+    {
+
+        if (Auth::user()->role == '11'):
             //`fid`, `type`, `purpose`, `remarks`,
             $settings = Settings::leftJoin('societies', 'settings.sid', '=', 'societies.id')
-                ->select('societies.name','settings.*')->get();
+                ->select('societies.name', 'settings.*')->get();
 
         else:
 
             $settings = Settings::leftJoin('societies', 'settings.sid', '=', 'societies.id')
-                ->select('societies.name','settings.*')
-                ->where('settings.sid','=',Auth::user()->sid)->get();
+                ->select('societies.name', 'settings.*')
+                ->where('settings.sid', '=', Auth::user()->sid)->get();
 
         endif;
-        
-        return view('backend.permissions',['settings'=>$settings]);
+
+        return view('backend.permissions', ['settings' => $settings]);
     }
-    
-    public function sliders() {
+
+    public function sliders()
+    {
 
         $sliders = Sliders::get();
-        
-        return view('backend.sliders',['sliders'=>$sliders]);
+
+        return view('backend.sliders', ['sliders' => $sliders]);
     }
 
-    public function manageSlider(Request $request) {
+    public function manageSlider(Request $request)
+    {
 
-        $slider = Sliders::where('id','=',$request->id)->get();
+        $slider = Sliders::where('id', '=', $request->id)->get();
 
-        return view('backend.manageSlider',['slider'=>$slider]);
+        return view('backend.manageSlider', ['slider' => $slider]);
 
     }
 
-    public function manageSliderPost(Request $request) {
+    public function manageSliderPost(Request $request)
+    {
 
-        if(empty($request->id)):
+        if (empty($request->id)):
 
             $pages = new Sliders();
             $pages->branch = Auth::user()->branch ?? '1';
@@ -1333,19 +1344,19 @@ class SettingsController extends Controller
             $pages->subtitle = $request->gallery_subtitle ?? '';
             $pages->link = $request->gallery_link ?? '';
             $pages->btntext = $request->gallery_btntext ?? '';
-            
-            if(!empty($request->file('gallery_imgs'))):
-                
+
+            if (!empty($request->file('gallery_imgs'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->gallery_imgs->extension();
+                $fileName = time() . "." . $request->gallery_imgs->extension();
                 $request->gallery_imgs->move(public_path("assets/frontend/img/sliders"), $fileName);
 
             endif;
 
             $pages->imgs = $fileName ?? '';
-            
+
             $pages->status = '1';
 
             $pages->save();
@@ -1357,27 +1368,27 @@ class SettingsController extends Controller
         else:
 
             $pages = Sliders::find($request->id);
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->gallery_title ?? '';
             $pages->subtitle = $request->gallery_subtitle ?? '';
             $pages->link = $request->gallery_link ?? '';
             $pages->btntext = $request->gallery_btntext ?? '';
-            
-            if(!empty($request->file('gallery_imgs'))):
-                
+
+            if (!empty($request->file('gallery_imgs'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->gallery_imgs->extension();
+                $fileName = time() . "." . $request->gallery_imgs->extension();
                 $request->gallery_imgs->move(public_path("assets/frontend/img/sliders"), $fileName);
 
                 $pages->imgs = $fileName ?? '';
 
             endif;
-            
+
             $pages->updated_at = Now();
-            
+
             $pages->update();
 
             return back()->with('success', 'Successfully Updated!!');
@@ -1386,42 +1397,45 @@ class SettingsController extends Controller
 
         endif;
     }
-    
-    public function galleries() {
+
+    public function galleries()
+    {
 
         $galleries = Galleries::get();
-        
-        return view('backend.gallery',['galleries'=>$galleries]);
+
+        return view('backend.gallery', ['galleries' => $galleries]);
     }
 
-    public function manageGallery(Request $request) {
+    public function manageGallery(Request $request)
+    {
 
-        $gallery = Galleries::where('id','=',$request->id)->get();
+        $gallery = Galleries::where('id', '=', $request->id)->get();
 
-        return view('backend.manageGallery',['gallery'=>$gallery]);
+        return view('backend.manageGallery', ['gallery' => $gallery]);
 
     }
 
-    public function manageGalleryPost(Request $request) {
+    public function manageGalleryPost(Request $request)
+    {
 
-        if(empty($request->id)):
+        if (empty($request->id)):
 
             $pages = new Galleries();
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->gallery_title ?? '';
-            
-            if(!empty($request->file('gallery_imgs'))):
-                
+
+            if (!empty($request->file('gallery_imgs'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->gallery_imgs->extension();
+                $fileName = time() . "." . $request->gallery_imgs->extension();
                 $request->gallery_imgs->move(public_path("/assets/frontend/img/gallery"), $fileName);
 
             endif;
 
             $pages->imgs = $fileName ?? '';
-            
+
             $pages->status = '1';
 
             $pages->save();
@@ -1433,24 +1447,24 @@ class SettingsController extends Controller
         else:
 
             $pages = Galleries::find($request->id);
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->gallery_title ?? '';
-            
-            if(!empty($request->file('gallery_imgs'))):
-                
+
+            if (!empty($request->file('gallery_imgs'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->gallery_imgs->extension();
+                $fileName = time() . "." . $request->gallery_imgs->extension();
                 $request->gallery_imgs->move(public_path("/assets/frontend/img/gallery"), $fileName);
 
             endif;
 
             $pages->imgs = $fileName ?? '';
-            
+
             $pages->updated_at = Now();
-            
+
             $pages->update();
 
             return back()->with('success', 'Successfully Updated!!');
@@ -1459,47 +1473,50 @@ class SettingsController extends Controller
 
         endif;
     }
-    
-    public function reviews() {
+
+    public function reviews()
+    {
 
         $reviews = Reviews::get();
-        
-        return view('backend.reviews',['reviews'=>$reviews]);
-        
-    }
 
-    public function manageReview(Request $request) {
-
-        $reviews = Reviews::where('id','=',$request->id)->get();
-
-        return view('backend.manageReview',['reviews'=>$reviews]);
+        return view('backend.reviews', ['reviews' => $reviews]);
 
     }
 
-    public function manageReviewPost(Request $request) {
-        
-        if(empty($request->id)):
+    public function manageReview(Request $request)
+    {
+
+        $reviews = Reviews::where('id', '=', $request->id)->get();
+
+        return view('backend.manageReview', ['reviews' => $reviews]);
+
+    }
+
+    public function manageReviewPost(Request $request)
+    {
+
+        if (empty($request->id)):
 
             $pages = new Reviews();
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->review_title ?? '';
             $pages->rating = $request->review_star ?? '';
             $pages->name = $request->review_name ?? '';
             $pages->content = $request->review_content ?? '';
-            
-            if(!empty($request->file('review_file'))):
-                
+
+            if (!empty($request->file('review_file'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->review_file->extension();
+                $fileName = time() . "." . $request->review_file->extension();
                 $request->review_file->move(public_path("/assets/frontend/img/testimonial"), $fileName);
 
             endif;
 
             $pages->imgs = $fileName ?? '';
-            
+
             $pages->status = '1';
 
             $pages->save();
@@ -1511,27 +1528,27 @@ class SettingsController extends Controller
         else:
 
             $pages = Reviews::find($request->id);
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->review_title ?? '';
             $pages->rating = $request->review_star ?? '';
             $pages->name = $request->review_name ?? '';
             $pages->content = $request->review_content ?? '';
-            
-            if(!empty($request->file('review_file'))):
-                
+
+            if (!empty($request->file('review_file'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->review_file->extension();
+                $fileName = time() . "." . $request->review_file->extension();
                 $request->review_file->move(public_path("/assets/frontend/img/testimonial"), $fileName);
 
                 $pages->imgs = $fileName ?? '';
 
             endif;
-            
+
             $pages->updated_at = Now();
-            
+
             $pages->update();
 
             return back()->with('success', 'Successfully Updated!!');
@@ -1540,51 +1557,55 @@ class SettingsController extends Controller
 
         endif;
     }
-    
-    public function postCategory() {
+
+    public function postCategory()
+    {
 
         $postCategory = Post_categories::get();
-        
-        return view('backend.postCategory',['postCategory'=>$postCategory]);
-        
-    }
 
-    public function managePostCategory(Request $request) {
-
-        $postCategory = Post_categories::where('id','=',$request->id)->get();
-
-        return view('backend.managePostCategory',['postCategory'=>$postCategory]);
+        return view('backend.postCategory', ['postCategory' => $postCategory]);
 
     }
 
-    public function managePostCategoryPost(Request $request) {
-        
-        function slog($string) {
-           $string = str_replace(' ', '-', strtolower($string)); // Replaces all spaces with hyphens.
-        
-           return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
+    public function managePostCategory(Request $request)
+    {
+
+        $postCategory = Post_categories::where('id', '=', $request->id)->get();
+
+        return view('backend.managePostCategory', ['postCategory' => $postCategory]);
+
+    }
+
+    public function managePostCategoryPost(Request $request)
+    {
+
+        function slog($string)
+        {
+            $string = str_replace(' ', '-', strtolower($string)); // Replaces all spaces with hyphens.
+
+            return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
         }
-        
-        if(empty($request->id)):
+
+        if (empty($request->id)):
 
             $pages = new Post_categories();
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->postCategory_title ?? '';
             $pages->slog = slog($request->postCategory_title ?? '');
-            
-            if(!empty($request->file('postCategory_file'))):
-                
+
+            if (!empty($request->file('postCategory_file'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->postCategory_file->extension();
+                $fileName = time() . "." . $request->postCategory_file->extension();
                 $request->postCategory_file->move(public_path("/assets/frontend/img/postCategory"), $fileName);
 
             endif;
 
             $pages->imgs = $fileName ?? '';
-            
+
             $pages->status = '1';
 
             $pages->save();
@@ -1596,25 +1617,25 @@ class SettingsController extends Controller
         else:
 
             $pages = Post_categories::find($request->id);
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->postCategory_title ?? '';
             $pages->slog = slog($request->postCategory_title ?? '');
-            
-            if(!empty($request->file('postCategory_file'))):
-                
+
+            if (!empty($request->file('postCategory_file'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->postCategory_file->extension();
+                $fileName = time() . "." . $request->postCategory_file->extension();
                 $request->postCategory_file->move(public_path("/assets/frontend/img/postCategory"), $fileName);
 
                 $pages->imgs = $fileName ?? '';
 
             endif;
-            
+
             $pages->updated_at = Now();
-            
+
             $pages->update();
 
             return back()->with('success', 'Successfully Updated!!');
@@ -1623,38 +1644,42 @@ class SettingsController extends Controller
 
         endif;
     }
-    
-    public function posts() {
 
-        $posts = Posts::leftjoin('post_categories','posts.category','=','post_categories.slog')
-        ->select('post_categories.title as catetitle','posts.*')->get();
-        
-        return view('backend.posts',['posts'=>$posts]);
-        
+    public function posts()
+    {
+
+        $posts = Posts::leftjoin('post_categories', 'posts.category', '=', 'post_categories.slog')
+            ->select('post_categories.title as catetitle', 'posts.*')->get();
+
+        return view('backend.posts', ['posts' => $posts]);
+
     }
 
-    public function managePost(Request $request) {
+    public function managePost(Request $request)
+    {
 
-        $post = Posts::where('id','=',$request->id)->get();
-            
+        $post = Posts::where('id', '=', $request->id)->get();
+
         $postCategory = Post_categories::get();
 
-        return view('backend.managePost',['post'=>$post,'postCategory'=>$postCategory]);
+        return view('backend.managePost', ['post' => $post, 'postCategory' => $postCategory]);
 
     }
 
-    public function managePostPost(Request $request) {
-        
-        function slog($string) {
-           $string = str_replace(' ', '-', strtolower($string)); // Replaces all spaces with hyphens.
-        
-           return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
+    public function managePostPost(Request $request)
+    {
+
+        function slog($string)
+        {
+            $string = str_replace(' ', '-', strtolower($string)); // Replaces all spaces with hyphens.
+
+            return preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
         }
-        
-        if(empty($request->id)):
+
+        if (empty($request->id)):
 
             $pages = new Posts();
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->post_title ?? '';
             $pages->slog = slog($request->post_title ?? '');
@@ -1663,19 +1688,19 @@ class SettingsController extends Controller
             $pages->shortContent = $request->post_shortcontent ?? '';
             $pages->tags = $request->post_tags ?? '';
             $pages->author = $request->post_author ?? '';
-            
-            if(!empty($request->file('post_file'))):
-                
+
+            if (!empty($request->file('post_file'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->post_file->extension();
+                $fileName = time() . "." . $request->post_file->extension();
                 $request->post_file->move(public_path("/assets/frontend/img/posts"), $fileName);
 
             endif;
 
             $pages->imgs = $fileName ?? '';
-            
+
             $pages->status = '1';
 
             $pages->save();
@@ -1687,7 +1712,7 @@ class SettingsController extends Controller
         else:
 
             $pages = Posts::find($request->id);
-            
+
             $pages->branch = Auth::user()->branch ?? '1';
             $pages->title = $request->post_title ?? '';
             $pages->slog = slog($request->post_title ?? '');
@@ -1696,21 +1721,21 @@ class SettingsController extends Controller
             $pages->shortContent = $request->post_shortcontent ?? '';
             $pages->tags = $request->post_tags ?? '';
             $pages->author = $request->post_author ?? '';
-            
-            if(!empty($request->file('post_file'))):
-                
+
+            if (!empty($request->file('post_file'))):
+
                 // $request->validate([
                 //     'image' => 'required|image|mimes:jpeg,jpg,png,gif,svg|max:2048',
                 // ]);
-                $fileName = time().".".$request->post_file->extension();
+                $fileName = time() . "." . $request->post_file->extension();
                 $request->post_file->move(public_path("/assets/frontend/img/posts"), $fileName);
 
                 $pages->imgs = $fileName ?? '';
 
             endif;
-            
+
             $pages->updated_at = Now();
-            
+
             $pages->update();
 
             return back()->with('success', 'Successfully Updated!!');
@@ -1719,25 +1744,28 @@ class SettingsController extends Controller
 
         endif;
     }
-    
-    public function pages() {
+
+    public function pages()
+    {
 
         $pages = Pages::get();
-        
-        return view('backend.pages',['pages'=>$pages]);
+
+        return view('backend.pages', ['pages' => $pages]);
     }
 
-    public function managePage(Request $request) {
+    public function managePage(Request $request)
+    {
 
-        $pages = Pages::where('id','=',$request->id)->get();
+        $pages = Pages::where('id', '=', $request->id)->get();
 
-        return view('backend.managePage',['pages'=>$pages]);
+        return view('backend.managePage', ['pages' => $pages]);
 
     }
 
-    public function managePagePost(Request $request) {
+    public function managePagePost(Request $request)
+    {
 
-        if(empty($request->id)):
+        if (empty($request->id)):
 
             $pages = new Pages();
             $pages->branch = Auth::user()->branch ?? '1';
@@ -1754,11 +1782,11 @@ class SettingsController extends Controller
         else:
 
             $pages = Pages::find($request->id);
-            
+
             $pages->title = $request->page_title ?? '';
             $pages->content = $request->page_des ?? '';
             $pages->updated_at = Now();
-            
+
             $pages->update();
 
             return back()->with('success', 'Successfully Updated!!');
@@ -1767,28 +1795,31 @@ class SettingsController extends Controller
 
         endif;
     }
-    
-    public function permissions() {
+
+    public function permissions()
+    {
 
         $settings = Settings::get();
-        
-        return view('backend.permissions',['settings'=>$settings]);
+
+        return view('backend.permissions', ['settings' => $settings]);
     }
 
-    public function managePermission(Request $request) {
+    public function managePermission(Request $request)
+    {
 
-        $settings = Settings::where('settings.id','=',$request->id)->get();
+        $settings = Settings::where('settings.id', '=', $request->id)->get();
 
-        return view('backend.managePermission',['settings'=>$settings]);
+        return view('backend.managePermission', ['settings' => $settings]);
 
     }
 
-    public function managePermissionPost(Request $request) {
+    public function managePermissionPost(Request $request)
+    {
 
-        $access = implode(',',$request->saccess) ?? '';
-        $actions = implode(',',$request->sactions) ?? '';
+        $access = implode(',', $request->saccess) ?? '';
+        $actions = implode(',', $request->sactions) ?? '';
 
-        if(empty($request->id)):
+        if (empty($request->id)):
 
             $settings = new Settings();
             $settings->branch = Auth::user()->branch ?? '';
@@ -1805,12 +1836,12 @@ class SettingsController extends Controller
         else:
 
             $settings = Settings::find($request->id);
-            
+
             $settings->access = $access ?? '';
             $settings->actions = $actions ?? '';
             $settings->role = $request->srole ?? '';
             $settings->updated_at = Now();
-            
+
             $settings->update();
 
             return back()->with('success', 'Successfully Updated!!');
@@ -1819,53 +1850,57 @@ class SettingsController extends Controller
 
         endif;
     }
-    
-    public function manageProfile(Request $request) {
 
-        $profiles = User::where('id','=',Auth::user()->id)->get();
+    public function manageProfile(Request $request)
+    {
 
-        return view('backend.manageProfile',['profiles'=>$profiles]);
+        $profiles = User::where('id', '=', Auth::user()->id)->get();
+
+        return view('backend.manageProfile', ['profiles' => $profiles]);
 
     }
 
-    public function manageProfilePost(Request $request) {
-        
-        $name = explode(' ',$request->mp_name);
-        
+    public function manageProfilePost(Request $request)
+    {
+
+        $name = explode(' ', $request->mp_name);
+
         $pages = User::find(Auth::user()->id);
-        
+
         $pages->first_name = $name[0] ?? '';
         $pages->last_name = $name[1] ?? '';
         $pages->mob = $request->mp_mob ?? '';
         $pages->email = $request->mp_email ?? '';
-        
+
         $pages->update();
 
         return back()->with('success', 'Successfully Updated!!');
 
         return back()->with('error', 'Oops, Somethings went worng.');
-            
+
     }
-    
-    public function managePassword(Request $request) {
-        
+
+    public function managePassword(Request $request)
+    {
+
         return view('backend.managePassword');
 
     }
 
-    public function managePasswordPost(Request $request) {
+    public function managePasswordPost(Request $request)
+    {
 
-        
+
         $user = User::find(Auth::user()->id);
-        
+
         $user->password = Hash::make($request->repassword);
-        
+
         $user->update();
 
         return back()->with('success', 'Successfully Updated!!');
 
         return back()->with('error', 'Oops, Somethings went worng.');
-            
+
     }
-    
+
 }
